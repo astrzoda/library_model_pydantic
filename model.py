@@ -63,10 +63,10 @@ class Rental(BaseModel):
     date: datetime
 
     @validator("rented_books", each_item=True)
-    def if_age(cls, v):
+    def the_user_is_allowed_to_rent_a_book_due_to_an_age_restriction(cls, v):
         if v[0].age_rating > user.age: # TODO: is the usage of user.age ok?
-            raise ValueError("Book " + v[0].title+" is allowed from the age of " +
-                             str(v[0].age_rating)+". The user age is "+str(user.age)+".")
+            raise ValueError("The legal age of " + v[0].title+" is " +
+                             str(v[0].age_rating)+". The user is "+str(user.age)+" years old.")
         return v
 
     # TODO: i don't know if it's ok
