@@ -18,33 +18,24 @@ class User(BaseModel):
     personal_id_nbr: str
 
     @validator("personal_id_nbr")
+    def all_of_characters_are_digits(cls, v):
+        if not v.isdigit():
+            raise ValueError("Invalid value. Each character must be a digit.")
+        return v
+
+    @validator("personal_id_nbr")
     def personal_id_nbr_consists_of_eleven_digits(cls, v):
         if len(v) != 11:
             raise ValueError("personal_id_nbr has to consists of 11 digits")
         return v
 
-    @validator("personal_id_nbr")
-    def year_is_between_1900_and_2299(cls, v):
-        month_component: str = v[2:4]
-        if not (0 <= int(month_component[0]) <= 7):
-            raise ValueError("Given personal_id_nbr year is not supported. Supported years: 1900-2299")
-        return v
-
     @property
     def date_of_birth(self) -> date:
-        month = int(self.personal_id_nbr[2:4])
-        if month < 20:
-            year = int("19" + self.personal_id_nbr[:2])
-        elif month < 40:
-            month -= 20
-            year = int("20"+self.personal_id_nbr[:2])
-        elif month < 60:
-            month -= 40
-            year = int("21" + self.personal_id_nbr[:2])
-        else:
-            month -= 60
-            year = int("22" + self.personal_id_nbr[:2])
         day = int(self.personal_id_nbr[4:6])
+        month = int(self.personal_id_nbr[2:4])
+        year = int(self.personal_id_nbr[:2])
+        year += {0: 1900, 1: 2000, 2: 2100, 3: 2200, 4: 1800}[month//20]
+        month %= 20
         return datetime(year, month, day).date()
 
     @property
@@ -82,7 +73,8 @@ class Rental(BaseModel):
 
 
 if __name__ == '__main__':
-    user = User(first_name="John", second_name="Doe", personal_id_nbr="05230708202")
+    user = User(first_name="John", second_name="Doe", personal_id_nbr="05320708202")
+    print(user.date_of_birth)
     try:
         rental = Rental(user=user,
                         rented_books=[(Book(title="Republic of Samsung",
