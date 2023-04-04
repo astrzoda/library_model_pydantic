@@ -1,7 +1,7 @@
 from datetime import datetime, date
 from typing import Optional
 from pydantic import BaseModel, ValidationError, validator, constr, root_validator
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 
 class NewBook(BaseModel):
@@ -108,8 +108,11 @@ def retrieve_rentals():
 @app.post("/rentals/")
 def create_rental(rental: NewRental):
     new_id = max(i.rental_id for i in rental_db) + 1 if rental_db else 1
+    user_candidates = [u for u in user_db if u.user_id == rental.user_id]
+    if not user_candidates:
+        raise HTTPException(status_code=404, detail=f"User not found")
     new_rental = Rental(rental_id=new_id,
-                        user=[u for u in user_db if u.user_id == rental.user_id][0],
+                        user=user_candidates[0],
                         rented_books=[b for i in rental.rented_books_ids for b in book_db if b.book_id == i],
                         date=rental.date
     )
@@ -129,7 +132,10 @@ def retrieve_users():
 
 @app.get("/users/{user_id}")
 def retrieve_user(user_id: int):
-    return [i for i in user_db if i.user_id == user_id][0]
+    candidates = [i for i in user_db if i.user_id == user_id]
+    if not candidates:
+        raise HTTPException(status_code=404, detail=f"User with user_id {user_id} does not exist.")
+    return candidates[0]
 
 
 @app.post("/users/")
@@ -150,7 +156,10 @@ def retrieve_books():
 
 @app.get("/books/{book_id}")
 def retrieve_book(book_id: int):
-    return [i for i in book_db if i.book_id == book_id][0]
+    candidates = [i for i in book_db if i.book_id == book_id]
+    if not candidates:
+        raise HTTPException(status_code=404, detail=f"User with user_id {book_id} does not exist.")
+    return candidates[0]
 
 
 @app.post("/books/")
